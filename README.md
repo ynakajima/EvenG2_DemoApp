@@ -64,26 +64,29 @@ Before running your original app, terminate official Even app and confirm BLE co
 
 With confirming your G2 is close to your smartphone, run your own app and tap "Not Connected" area.  
 
-![](./Picture_Readme/G2_NotConnected.png)
+<img src="./Picture_Readme/G2_NotConnected.png" width= "200px" >
+
 
 Your app automatically detect a pair of G2 glasses.  
 
-![](./Picture_Readme/G2_Detected.png) 
+<img src="./Picture_Readme/G2_Detected.png" width="200px">
 
 Touch your glass name. BLE connection will be done after a few seconds. 
 
-![](./Picture_Readme/G2_Conntected.png)
+<img src="./Picture_Readme/G2_Conntected.png" width="200px">
 
 # Send Text to G2
 
 When you tap three stacked horizontal lines, you can see three features as "BMP", "Notification", and "Text".
 Touch "Text", then you can see the message on your G2.
 
-![](./Picture_Readme/G2_SendText.png)
+<img src="./Picture_Readme/G2_SendText.png" width="200px">
+
 
 Here is an example that G2 shows part of received text.
 
-![](./Picture_Readme/G2_ReceivedText.jpg)
+<img src="./Picture_Readme/G2_ReceivedText.jpg" width="200px">
+
 
 You can scroll down all of messages that G2 received.
 
