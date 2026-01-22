@@ -1,245 +1,200 @@
 
-# Even Demo
+# Even Demo for G2
 
-## Even AI
-The general process of the Even AI function is as follows: After the app and glasses are 
-connected via dual Bluetooth, long press the left-side TouchBar on the glasses to enter the 
-Even AI activation state. At this point, the app will receive the [0xF5, 0x17] command from the 
-glasses. The app then needs to send a command [0x0E, 0x01] to the glasses to activate the 
-right-side microphone for recording. Once the microphone is successfully activated, the app 
-will receive a real-time audio stream in LC3 format. Keep pressing until speaking is finished, 
-the maximum supported recording duration is 30 seconds. After the recording is finished, the 
-app needs to convert the audio stream into text, which is then sent to the large model for a 
-response. After the app successfully obtains the response from the large model, it can send 
-the result to the glasses according to the Bluetooth protocol. By default, the result is 
-transmitted automatically, page by page. During transmission, a single tap on the TouchBar 
-will switch to manual mode, with the left-side TouchBar used for page-up and the right-side 
-TouchBar for page-down. A double-tap on the TouchBar will directly exit the Even AI function.
+The repository has been forked from [EvenDemoApp](https://github.com/even-realities/EvenDemoApp) and modified by GitHub Copilot.  
 
 
-## Image Sending
-Image transmission currently supports 1-bit, 576*136 pixel BMP images (refer to image_1.bmp, image_2.bmp in the project). 
-The core process includes three steps: 
-- 1. Divide the BMP image data into packets (each packet is 194 bytes), then add 0x15 command and syncID to the front of the packet, and send it to the dual BLE in the order of the packets (the left and right sides can be sent independently at the same time). The first packet needs to insert 4 bytes of glasses end storage address 0x00, 0x1c, 0x00, 0x00, so the first packet data is ([0x15, index & 0xff, 0x00, 0x1c, 0x00, 0x00], pack), and other packets do not need addresses 0x00, 0x1c, 0x00, 0x00;
-- 2. After sending the last packet, it is necessary to send the packet end command [0x20, 0x0d, 0x0e] to the dual BLE;
-- 3. After the packet end command in step 2 is correctly replied, send the CRC check command to the dual BLE through the 0x16 command. When calculating the CRC, it is necessary to consider the glasses end storage address added when sending the first BMP packet.
-     
-For a specific example, click the icon in the upper right corner of the App homepage to enter the Features page. The page contains three buttons: BMP 1, BMP 2, and Exit, which represent the transmission and display of picture 1, the transmission and display of picture 2, and the exit of picture transmission and display.
+# How to build
+
+## Make Flutter environment
+
+See [Flutter install section in "Flutter Docs"](https://docs.flutter.dev/install)  
+
+If you have already installed Flutter environment in your computer, you can skip the process.
+
+## Solve dependency
+
+```bash
+$ pwd
+-> top directory
+$ flutter pub get
+```
+If you want to build ios app, these command below may be useful.  
 
 
-## Text Sending
-Currently, the demo supports sending text directly to the glasses and displaying it.
-The core steps are as follows:
-- 1. Divide the input text into lines according to the actual display width of the glasses (the value in the demo is 488, which can be fine-tuned) and the font size you want (the value in the demo is 21, which can be customized);
-- 2. Combine the number of lines per screen (the value in the demo is 5) and the size limit of each ble packet to divide the text divided in step 1 into packets (5 lines are displayed per screen in the demo, the first three lines form one packet, and the last two lines form one packet);
-- 3. Use the Text Sending protocol in the protocol section below to send the multi-packet data in step 2 to the glasses by screen (a timer is used in the demo to send each screen of text in sequence).
+## Build  
+
+When you plug your ios or Android devices in your computer, it's Ok to run the command on top directory. 
+
+Flutter recognizes plugged devices and build for the devices automatically.
+
+### Build Android devices
+
+Plug your android smartphone and run the command below.
+
+```bash
+$ pwd //top directory
+$ flutter run
+```
+
+### Build iOS devices
+
+Open your Xcode project (ios/Runner.xcodeproj).  
+
+Modify "Signing and Capabilities".  Replace initial idenfitier name with your organization name.  
+
+![](./Picture_Readme/Xcode_identifier.jpg)
 
 
+```bash
+$ cd ios
+$ flutter precache --ios  
+$ pod install 
+$ cd ../  //top directory
+$ flutter run
+```
 
-## Instructions
-G1’s dual Bluetooth communication is unique, each arm corresponds to a separate BLE 
-connection. During communication, unless the protocol specifies sending data to only one 
-side (e.g., microphone activation to the right), the app should: 
-- First send data to the left side. 
-- Then send data to the right side after receiving a successful acknowledgment from the left. 
- Also, consider the glasses' display width limitation: during the Even AI function, the 
-maximum width is 488 pixels, with eac
+* Known Issues  
 
+Your app is installed on your iPhone but pairing with G2 is failed. It will be modified.
 
+# Run with your G2
 
+Before running your original app, terminate official Even app and confirm BLE connection between official app and G2.  
 
+With confirming your G2 is close to your smartphone, run your own app and tap "Not Connected" area.  
 
-## Protocol
-### TouchBar Events
-#### Single Tap
- - 0xf5 0x01
- - When checking the dashboard, you can flip to the next QuickNote by tapping the right TouchBar. Or you can read the detail of your unread notifications by tapping the left TouchBar.
- - In the teleprompting or evenai features, forward/back the page by tapping the right/left TouchBar.
+![](./Picture_Readme/G2_NotConnected.png)
 
-#### Double Tap
- - 0xf5 0x00
- - Close the features or turn off display details.
+Your app automatically detect a pair of G2 glasses.  
 
-#### Triple Tap
- - 0xf5 0x04/0x05
- - Toggle Silent Mode.
+![](./Picture_Readme/G2_Detected.png) 
 
+Touch your glass name. BLE connection will be done after a few seconds. 
 
-### Start Even AI 
-#### Command Information 
- - Command: 0xF5
-   - subcmd (Sub-command): 0~255
-   - param (Parameters): Specific parameters associated with each sub-command.
-#### Sub-command Descriptions 
- - subcmd: 0 (exit to dashboard manually).
-   - Description: Stop all advanced features and return to the dashboard. 
- - subcmd: 1 (page up/down control in manual mode). 
-   - Description: page-up(left ble) / page-down (right ble) 
-- subcmd: 23 （start Even AI).
-   - Description: Notify phone to activate Even AI. 
-- subcmd: 24 （stop Even AI recording).
-   - Description: Even AI recording ended.
+![](./Picture_Readme/G2_Conntected.png)
 
-### Open Glasses Mic 
-#### Command Information 
- - Command: 0x0E
- - enable:
-   - 0 (Disable) / 1 (Enable)
-#### Description 
- - enable: 
-   - 0: Disable the MIC (turn off sound pickup). 
-   - 1: Enable the MIC (turn on sound pickup). 
-#### Response from Glasses 
- - Command: 0x0E
- - rsp_status (Response Status): 
-   - 0xC9: Success
-   - 0xCA: Failure
- - enable: 
-   - 0: MIC disabled.
-   - 1: MIC enabled.
-#### Example 
- - Command sent to device: 0x0E, with enable = 1 to enable the MIC. 
- - Device response: 
-   - If successful: 0x0E with rsp_status = 0xC9 and enable = 1. 
-   - If failed: 0x0E with rsp_status = 0xCA and enable = 1.
-   
-### Receive Glasses Mic data 
-#### Command Information 
- - Command: 0xF1
- - seq (Sequence Number): 0~255
- - data (Audio Data): Actual MIC audio data being transmitted. 
-#### Field Descriptions 
-- seq (Sequence Number): 
-   - Range: 0~255
-   - Description: This is the sequence number of the current data packet. It helps to ensure 
-the order of the audio data being received. 
-- data (Audio Data): 
-   - Description: The actual audio data captured by the MIC, transmitted in chunks according 
-to the sequence. 
-#### Example 
-- Command: 0xF1, with seq = 10 and data = [Audio Data] 
-- Description: This command transmits a chunk of audio data from the glasses' MIC, with a 
-sequence number of `10` to maintain packet order. 
+# Send Text to G2
 
-### Send AI Result 
-#### Command Information 
- - Command: 0x4E
- - seq (Sequence Number): 0~255
- - total_package_num (Total Package Count): 1~255
- - current_package_num (Current Package Number): 0~255
- - newscreen (Screen Status) 
-#### Field Descriptions 
- - seq (Sequence Number): 
-   - Range: 0~255
-   - Description: Indicates the sequence of the current package. 
- - total_package_num (Total Package Count): 
-   - Range: 1~255
-   - Description: The total number of packages being sent in this transmission. 
- - current_package_num (Current Package Number): 
-   - Range: 0~255 
-   - Description: The current package number within the total, starting from 0. 
- - newscreen (Screen Status): 
-   - Composed of lower 4 bits and upper 4 bits to represent screen status and Even AI 
-mode. 
-   ##### Lower 4 Bits (Screen Action): 
-      - 0x01: Display new content
- 
-   ##### Upper 4 Bits (Even AI Status): 
-      - 0x30: Even AI displaying（automatic mode default）
-      - 0x40: Even AI display complete (Used when the last page of automatic mode) 
-      - 0x50: Even AI manual mode 
-      - 0x60: Even AI network error
-   
-   ##### Example:
-   - New content + Even AI displaying state is represented as 0x31.
-- new_char_pos0 and new_char_pos1: 
-   - new_char_pos0: Higher 8 bits of the new character position. 
-   - new_char_pos1: Lower 8 bits of the new character position. 
-- current_page_num (Current Page Number): 
-   - Range: 0~255
-   - Description: Represents the current page number. 
-- max_page_num (Maximum Page Number): 
-   - Range: 1~255 
-   - Description: The total number of pages. 
-- data (Data): 
-   - Description: The actual data being transmitted in this package.
+When you tap three stacked horizontal lines, you can see three features as "BMP", "Notification", and "Text".
+Touch "Text", then you can see the message on your G2.
 
-### Send bmp data packet 
-#### Command Information 
- - Command: 0x15
- - seq (Sequence Number): 0~255
- - address: [0x00, 0x1c, 0x00, 0x00]
- - data0 ~ data194 
-#### Field Descriptions 
- - seq (Sequence Number): 
-   - Range: 0~255
-   - Description: Indicates the sequence of the current package.
- - address:
-   bmp address in the Glasses (just attached in the first pack)
- - data0 ~ data194:
-   - bmp data packet
+![](./Picture_Readme/G2_SendText.png)
 
-### Bmp data packet transmission ends 
-#### Command Information 
- - Command: 0x20
- - data0: 0x0d
- - data1: 0x0e
-#### Field Descriptions 
- - Fixed format command： [0x20, 0x0d, 0x0e]
+Here is an example that G2 shows part of received text.
 
-### CRC Check 
-#### Command Information 
- - Command: 0x16
- - crc 
-#### Field Descriptions 
- - crc:
-   The crc check value calculated using Crc32Xz big endian, combined with the bmp picture storage address and picture data.
+![](./Picture_Readme/G2_ReceivedText.jpg)
 
+You can scroll down all of messages that G2 received.
 
-### Text Sending 
-#### Command Information 
- - Command: 0x4E
- - seq (Sequence Number): 0~255
- - total_package_num (Total Package Count): 1~255
- - current_package_num (Current Package Number): 0~255
- - newscreen (Screen Status) 
-#### Field Descriptions 
- - seq (Sequence Number): 
-   - Range: 0~255
-   - Description: Indicates the sequence of the current package. 
- - total_package_num (Total Package Count): 
-   - Range: 1~255
-   - Description: The total number of packages being sent in this transmission. 
- - current_package_num (Current Package Number): 
-   - Range: 0~255 
-   - Description: The current package number within the total, starting from 0. 
- - newscreen (Screen Status): 
-   - Composed of lower 4 bits and upper 4 bits to represent screen status and Even AI 
-mode. 
-   ##### Lower 4 Bits (Screen Action): 
-      - 0x01: Display new content
- 
-   ##### Upper 4 Bits (Status): 
-      - 0x70: Text Show
-   
-   ##### Example:
-   - New content + Text Show state is represented as 0x71.
-- new_char_pos0 and new_char_pos1: 
-   - new_char_pos0: Higher 8 bits of the new character position. 
-   - new_char_pos1: Lower 8 bits of the new character position. 
-- current_page_num (Current Page Number): 
-   - Range: 0~255
-   - Description: Represents the current page number. 
-- max_page_num (Maximum Page Number): 
-   - Range: 1~255 
-   - Description: The total number of pages. 
-- data (Data): 
-   - Description: The actual data being transmitted in this package.
+# Next Plan (TBD)
+
+- Send BMP to G2  
+- Make my own AI agent  
+
+# UnConfirmed
+
+# Reference: G2 Protocol Implementation
+
+以降の文書はGitHub Copilotで生成されました。  
+
+[Even Reailities G1向けリポジトリ](https://github.com/even-realities/EvenDemoApp)をもとに変更した点をまとめています。  
 
 
 
+## 主な変更点
 
+### 1. BLE UUID の更新
+- G1: `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+- G2: `00002760-08c2-11e1-9073-0e8ac72e0000`
 
+### 2. 新しいプロトコルファイル
 
+#### `lib/services/g2_protocol.dart`
+G2プロトコルの実装:
+- CRC-16/CCITT 計算
+- Varintエンコーディング
+- パケット構築（認証、ディスプレイ設定、テキスト送信）
+- テキストフォーマット（25文字/行、10行/ページ）
 
+#### `lib/services/g2_text_service.dart`
+G2テキスト転送サービス:
+- 7パケット認証シーケンス
+- テレプロンプタープロトコル実装
+- 両眼への同期送信
 
+### 3. Text Transfer の使用方法
+
+```dart
+import 'package:demo_ai_even/services/g2_text_service.dart';
+
+// テキストを送信
+final success = await G2TextService.instance.sendText("Your text here");
+```
+
+既存の `TextService.startSendText()` は自動的にG2プロトコルを使用します。
+
+### 4. プロトコルシーケンス
+
+1. **認証** (7パケット) - セッション確立
+2. **ディスプレイ設定** (0x0E-20, type=2) - ディスプレイパラメータ設定
+3. **テレプロンプター初期化** (0x06-20, type=1) - スクリプト選択、モード設定
+4. **コンテンツページ 0-9** (0x06-20, type=3) - 最初のバッチ
+5. **ミッドストリームマーカー** (0x06-20, type=255) - 必須マーカー
+6. **コンテンツページ 10-11** (0x06-20, type=3) - 2番目のバッチ
+7. **同期トリガー** (0x80-00, type=14) - レンダリングトリガー
+8. **コンテンツページ 12+** (0x06-20, type=3) - 残りのページ
+
+### 5. テキストフォーマット仕様
+
+- **25文字/行**: 行の最大幅
+- **10行/ページ**: 各ページの行数
+- **約7行表示**: 一度に表示される行数
+- **最小14ページ**: 正しくレンダリングするための最小コンテンツ
+- **自動改行**: 単語境界で改行
+- **明示的な改行**: `\n` でサポート
+
+### 6. G2デバイス命名規則
+
+- 左: `Even G2_XX_L_YYYYYY`
+- 右: `Even G2_XX_R_YYYYYY`
+
+ここで:
+- `XX` = モデルバリアント
+- `L/R` = 左/右耳
+- `YYYYYY` = シリアル接尾辞
+
+## デバッグ
+
+ログを確認するには:
+```
+flutter run --verbose
+```
+
+G2TextServiceは各ステップで詳細なログを出力します:
+- `G2TextService: Authenticating...`
+- `G2TextService: Formatting text...`
+- `G2TextService: Sending display config...`
+- `G2TextService: Initializing teleprompter...`
+- 等々
+
+## 参考文献
+
+このG2プロトコル実装は以下に基づいています:
+https://github.com/i-soxi/even-g2-protocol
+
+## トラブルシューティング
+
+### テキストが表示されない場合
+
+1. デバイスがG2（G1ではない）であることを確認
+2. 両眼が接続されていることを確認
+3. 認証が成功しているか確認（ログを確認）
+4. テキストが最低140行（14ページ）にパディングされていることを確認
+
+### 接続の問題
+
+1. Bluetoothがオンになっていることを確認
+2. グラスが充電されていることを確認
+3. 他のアプリ（公式Evenアプリなど）がグラスに接続していないことを確認
+4. アプリを再起動して認証状態をリセット

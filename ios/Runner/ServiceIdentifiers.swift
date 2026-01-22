@@ -8,9 +8,12 @@
 import Foundation
 
 class ServiceIdentifiers:NSObject{
-    static let uartServiceUUIDString                                = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-    //写入
-    static let uartTXCharacteristicUUIDString                       = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-    //接受
-    static let uartRXCharacteristicUUIDString                       = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+    // G2 BLE UUIDs - Base: 00002760-08c2-11e1-9073-0e8ac72e{xxxx}
+    static let uartServiceUUIDString                                = "00002760-08c2-11e1-9073-0e8ac72e0000"
+    // Write characteristic (Commands: Phone -> Glasses)
+    static let uartTXCharacteristicUUIDString                       = "00002760-08c2-11e1-9073-0e8ac72e5401"
+    // Notify characteristic (Responses: Glasses -> Phone)
+    static let uartRXCharacteristicUUIDString                       = "00002760-08c2-11e1-9073-0e8ac72e5402"
+    // Display rendering characteristic
+    static let displayCharacteristicUUIDString                      = "00002760-08c2-11e1-9073-0e8ac72e6402"
 }

@@ -32,9 +32,10 @@ class BleManager private constructor() {
     companion object {
         val LOG_TAG = BleManager::class.simpleName
 
-        private const val SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-        private const val WRITE_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
-        private const val READ_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+        // G2 BLE UUIDs - Service 0x5450 contains the write/notify characteristics
+        private const val SERVICE_UUID = "00002760-08c2-11e1-9073-0e8ac72e5450"
+        private const val WRITE_CHARACTERISTIC_UUID = "00002760-08c2-11e1-9073-0e8ac72e5401"
+        private const val READ_CHARACTERISTIC_UUID = "00002760-08c2-11e1-9073-0e8ac72e5402"
 
         //  SingleInstance
         private var mInstance: BleManager? = null
@@ -228,6 +229,13 @@ class BleManager private constructor() {
                 LOG_TAG,
                 "BluetoothGattCallback - onServicesDiscovered: $gatt, status = $status"
             )
+            // Debug: Log all available services
+            gatt?.services?.forEach { service ->
+                Log.d(LOG_TAG, "Available Service UUID: ${service.uuid}")
+                service.characteristics.forEach { char ->
+                    Log.d(LOG_TAG, "  Characteristic UUID: ${char.uuid}")
+                }
+            }
             connectedDevice?.let {
                 //  1. Save gatt
                 var isLeft = false

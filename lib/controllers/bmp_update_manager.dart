@@ -45,9 +45,9 @@ class BmpUpdateManager {
           lr: lr);
 
       if (Platform.isIOS) {
-        await Future.delayed(Duration(milliseconds: 8)); // 4 6 10 14  30
+        await Future.delayed(const Duration(milliseconds: 8)); // 4 6 10 14  30
       } else {
-        await Future.delayed(Duration(milliseconds: 5));  // 5
+        await Future.delayed(const Duration(milliseconds: 5));  // 5
       }
 
       var offset = index * packLen;
@@ -76,7 +76,7 @@ class BmpUpdateManager {
       print("${DateTime.now()} finishUpdate---lr---$lr--ret----${ret.data}-----");
       if (ret.isTimeout) {
         currentRetryTime++;
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
         return finishUpdate();
       }
       return ret.data[1].toInt() == 0xc9;

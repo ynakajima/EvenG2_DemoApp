@@ -9,7 +9,7 @@ typedef SendResultParse = bool Function(Uint8List value);
 
 class BleManager {
   Function()? onStatusChanged;
-  BleManager._() {}
+  BleManager._();
 
   static BleManager? _instance;
   static BleManager get() {
@@ -104,7 +104,7 @@ class BleManager {
     beatHeartTimer?.cancel();
     beatHeartTimer = null;
 
-    beatHeartTimer = Timer.periodic(Duration(seconds: 8), (timer) async {
+    beatHeartTimer = Timer.periodic(const Duration(seconds: 8), (timer) async {
       bool isSuccess = await Proto.sendHeartBeat();
       if (!isSuccess && tryTime < 2) {
         tryTime++;
@@ -341,7 +341,7 @@ class BleManager {
     });
 
     await sendData(data, lr: lr, other: other).timeout(
-      Duration(seconds: 2),
+      const Duration(seconds: 2),
       onTimeout: () {
         _reqTimeout.remove(cmd)?.cancel();
         var ret = BleReceive();
