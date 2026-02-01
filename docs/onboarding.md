@@ -80,4 +80,58 @@ lib/
 
 ---
 
-必要に応じて、BLE のプロトコル詳細やネイティブ側の実装（Android/iOS のプラットフォームコード）も別ドキュメントとして追加していくと理解がさらに深まります。
+## 7. Flutter 初心者向けドキュメント（最小キャッチアップ）
+
+### Flutter アプリの基本構造
+- Flutter は「Widget のツリー」で UI を組み立てます。本アプリでも `MaterialApp` の `home` に `HomePage` を指定し、そこから画面が始まります。【F:lib/main.dart†L14-L27】
+- 画面は `StatefulWidget` / `StatelessWidget` で構築され、`HomePage` は状態を持つ `StatefulWidget` です。【F:lib/views/home_page.dart†L12-L24】
+
+### 依存関係の管理
+- 依存関係は `pubspec.yaml` で管理します。GetX (`get`)、ネットワーク (`dio`) などもここで宣言されています。【F:pubspec.yaml†L19-L56】
+- 画像などのアセットは `flutter.assets` で登録されています。【F:pubspec.yaml†L69-L76】
+
+### 開発時の基本コマンド
+- `flutter pub get` で依存関係を取得し、`flutter run` で実機/エミュレータへ起動します。【F:README.md†L13-L49】
+
+### 状態管理の入口
+- 本アプリは GetX を使っており、`EvenaiModelController` を `Get.put()` で注入してから使う構造です。【F:lib/main.dart†L8-L18】【F:lib/controllers/evenai_model_controller.dart†L1-L35】
+
+## 8. Flutter アプリとしての全体像
+
+Flutter 側は「UI 層」「状態管理」「サービス（BLE/AI）」の三層を意識して読むと理解が早いです。
+
+- **UI 層**: `HomePage` が BLE 接続・機能画面への入口です。BLE のステータスを表示し、接続後は AI の履歴画面へ遷移します。【F:lib/views/home_page.dart†L21-L200】
+- **状態管理**: EvenAI の履歴は `EvenaiModelController` が `Rx` で管理し、UI に即時反映します。【F:lib/controllers/evenai_model_controller.dart†L1-L35】
+- **サービス層**: `BleManager` が BLE の送受信を抽象化し、`EvenAI` が録音〜回答送信までを制御します。【F:lib/ble_manager.dart†L1-L176】【F:lib/services/evenai.dart†L54-L200】
+
+この構造は「UI → サービス → BLE/ネイティブ」へと責務が流れる設計になっています。【F:lib/views/home_page.dart†L21-L200】【F:lib/ble_manager.dart†L27-L176】
+
+## 9. BLE のプロトコル詳細（Flutter 側）
+
+### G2 プロトコル（テキスト転送）
+- `G2Protocol` は G2 用のパケットフォーマット（ヘッダー/CRC/varint）を生成します。`buildPacket` が「ヘッダー + payload + CRC」を組み立てます。【F:lib/services/g2_protocol.dart†L1-L86】
+- 認証は 7 パケットのシーケンスで、`buildAuthPackets()` が固定ペイロードの連続送信を行います。【F:lib/services/g2_protocol.dart†L88-L168】
+- テキスト送信は `G2TextService` で実行され、**認証 → 表示設定 → テレプロンプタ初期化 → ページ送信 → 同期トリガー**の順で送信されます。【F:lib/services/g2_text_service.dart†L17-L190】
+
+### EvenAI 向けプロトコル
+- `Proto.sendEvenAIData()` は EvenAI の返信を BLE で送信するロジックで、`EvenaiProto` による分割パケット送信を行います。【F:lib/services/proto.dart†L28-L82】
+- `Proto.sendHeartBeat()` は左右デバイスへ定期的な heartbeat を送り、接続維持を担います。【F:lib/services/proto.dart†L84-L131】
+
+### BLE リクエストの統合入口
+- BLE 送信は `BleManager.request()` / `requestList()` が窓口です。左右デバイスへの送信やタイムアウト管理をここで行っています。【F:lib/ble_manager.dart†L200-L360】
+
+## 10. ネイティブ側の実装（Android/iOS）
+
+### Android 側（Kotlin）
+- MethodChannel / EventChannel の初期化は `BleChannelHelper.initChannel()` で行い、Flutter ↔ Android の双方向通信を構成します。【F:android/app/src/main/kotlin/com/example/demo_ai_even/bluetooth/BleChannelHelper.kt†L15-L57】
+- `BleMethodChannel` が Flutter からの `startScan` / `connectToGlasses` / `send` などを受け取り、`BleManager` に委譲します。【F:android/app/src/main/kotlin/com/example/demo_ai_even/bluetooth/BleChannelHelper.kt†L69-L119】
+- `BleManager` は G2 の BLE UUID を定義し、スキャン→ペアリング→接続→書き込みを行います。【F:android/app/src/main/kotlin/com/example/demo_ai_even/bluetooth/BleManager.kt†L26-L154】
+
+### iOS 側（Swift）
+- `AppDelegate` で `FlutterMethodChannel` を作成し、`startScan` / `connectToGlasses` / `send` などのメソッドを `BluetoothManager` に委譲します。【F:ios/Runner/AppDelegate.swift†L12-L63】
+- `BluetoothManager` は `CBCentralManager` を使ってスキャン/接続を行い、左右デバイスが揃うと Flutter に `foundPairedGlasses` を通知します。【F:ios/Runner/BluetoothManager.swift†L28-L121】
+- G2 の BLE UUID 定義は `ServiceIdentifiers` に集約されています。【F:ios/Runner/ServiceIdentifiers.swift†L9-L18】
+
+---
+
+必要に応じて、BLE のプロトコル詳細やネイティブ側の実装（Android/iOS のプラットフォームコード）は本ドキュメントに追記しつつ、チーム内で更新し続けると理解がさらに深まります。
